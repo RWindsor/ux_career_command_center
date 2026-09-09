@@ -1,0 +1,85 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Cool paper background, not the cliché warm-cream default */
+    --background: 210 12% 97%;
+    --foreground: 222 25% 12%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222 25% 12%;
+
+    --primary: 219 55% 38%;        /* signal blue */
+    --primary-foreground: 210 20% 98%;
+
+    --secondary: 210 15% 93%;
+    --secondary-foreground: 222 25% 16%;
+
+    --muted: 210 15% 93%;
+    --muted-foreground: 220 10% 42%;
+
+    --accent: 18 75% 52%;          /* flag orange — used sparingly for status */
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 4 70% 48%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 214 15% 88%;
+    --input: 214 15% 88%;
+    --ring: 219 55% 38%;
+
+    /* Sidebar stays dark-ink even in light mode: the "console" of the app */
+    --sidebar-bg: 222 30% 11%;
+    --sidebar-fg: 210 20% 92%;
+    --sidebar-accent: 219 65% 62%;
+    --sidebar-border: 222 25% 18%;
+
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 222 24% 8%;
+    --foreground: 210 20% 94%;
+
+    --card: 222 22% 11%;
+    --card-foreground: 210 20% 94%;
+
+    --primary: 219 65% 62%;
+    --primary-foreground: 222 30% 10%;
+
+    --secondary: 222 16% 16%;
+    --secondary-foreground: 210 20% 94%;
+
+    --muted: 222 16% 16%;
+    --muted-foreground: 216 10% 65%;
+
+    --accent: 18 80% 58%;
+    --accent-foreground: 222 30% 10%;
+
+    --destructive: 4 65% 55%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 222 15% 20%;
+    --input: 222 15% 20%;
+    --ring: 219 65% 62%;
+
+    --sidebar-bg: 222 30% 6%;
+    --sidebar-fg: 210 20% 90%;
+    --sidebar-accent: 219 65% 62%;
+    --sidebar-border: 222 20% 14%;
+
+    --radius: 0.5rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+}
