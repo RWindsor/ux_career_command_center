@@ -15,7 +15,7 @@ export function Sidebar() {
         <SidebarNav />
       </div>
       <div className="border-t border-sidebar-border px-5 py-4 text-xs text-sidebar-fg/40">
-        Phase 1 — Job Database
+        Pipeline · Interview Prep · Recruiters · Analytics
       </div>
     </aside>
   );

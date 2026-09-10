@@ -1,0 +1,7 @@
+{
+  "crons": [
+    { "path": "/api/cron/discovery-resolve", "schedule": "0 12 * * *" },
+    { "path": "/api/cron/ats-refresh", "schedule": "0 13 * * *" },
+    { "path": "/api/cron/weekly-report", "schedule": "0 14 * * 1" }
+  ]
+}

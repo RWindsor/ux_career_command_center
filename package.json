@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.11.3",
+    "@google/genai": "^2.21.0",
     "@neondatabase/serverless": "^0.10.1",
     "@radix-ui/react-avatar": "^1.1.1",
     "@radix-ui/react-dialog": "^1.1.2",
@@ -33,7 +34,8 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "tailwind-merge": "^2.5.2",
-    "tailwindcss-animate": "^1.0.7"
+    "tailwindcss-animate": "^1.0.7",
+    "zod": "^4.6.1"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",

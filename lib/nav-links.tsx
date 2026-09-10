@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { LayoutDashboard, Briefcase, FileText, Settings } from "lucide-react";
+import { LayoutDashboard, Briefcase, FileText, Settings, GraduationCap, Users, FileSignature, Radar } from "lucide-react";
 
 export interface NavLink {
   label: string;
@@ -11,7 +11,11 @@ export interface NavLink {
 
 export const navLinks: NavLink[] = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { label: "Job Pipeline", href: "/dashboard/jobs", icon: Briefcase, disabled: true, badge: "Phase 2" },
-  { label: "Resume Library", href: "/dashboard/resumes", icon: FileText, disabled: true, badge: "Phase 2" },
-  { label: "Settings", href: "/dashboard/settings", icon: Settings, disabled: true, badge: "Soon" },
+  { label: "Job Pipeline", href: "/jobs", icon: Briefcase },
+  { label: "Discovery", href: "/discovery", icon: Radar },
+  { label: "Resume Library", href: "/resumes", icon: FileText },
+  { label: "Interview Prep", href: "/interview-prep", icon: GraduationCap },
+  { label: "Recruiters", href: "/recruiters", icon: Users },
+  { label: "Contracts", href: "/contracts", icon: FileSignature },
+  { label: "Settings", href: "/settings", icon: Settings, disabled: true, badge: "Soon" },
 ];
