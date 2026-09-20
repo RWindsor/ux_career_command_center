@@ -40,8 +40,8 @@ export function SavedSearchForm({ searchConfigured }: { searchConfigured: boolea
         <CardContent className="flex flex-col gap-4">
           {!searchConfigured && (
             <p className="rounded-md bg-secondary px-3 py-2 text-sm text-muted-foreground">
-              Web-search discovery isn&apos;t configured yet (missing GOOGLE_SEARCH_API_KEY /
-              GOOGLE_SEARCH_ENGINE_ID) — you can still save a search, but board resolution will report an error
+              Web-search discovery isn&apos;t configured yet (missing BRAVE_SEARCH_API_KEY) — you can still save a
+              search, but board resolution will report an error
               until it&apos;s set up. In the meantime, use &ldquo;Watch a specific board&rdquo; below.
             </p>
           )}

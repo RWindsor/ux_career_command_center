@@ -41,7 +41,7 @@ export function DuplicateReviewCard({
       </CardContent>
       <CardFooter className="flex flex-wrap gap-2">
         <Button asChild size="sm" variant="outline">
-          <Link href={`/dashboard/jobs/${job.id}`}>View this listing</Link>
+          <Link href={`/jobs/${job.id}`}>View this listing</Link>
         </Button>
         <Button
           type="button"

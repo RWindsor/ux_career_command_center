@@ -90,14 +90,14 @@ export default async function JobDetailPage({
         <div className="flex items-center gap-2">
           <JobStatusSelect jobId={job.id} status={job.status} />
           <Button asChild variant="outline" size="sm">
-            <Link href={`/dashboard/jobs/${job.id}/interview-prep`}>Interview prep</Link>
+            <Link href={`/jobs/${job.id}/interview-prep`}>Interview prep</Link>
           </Button>
           <Button asChild variant="outline" size="sm">
-            <Link href={`/dashboard/jobs/${job.id}/application-package`}>Application assistant</Link>
+            <Link href={`/jobs/${job.id}/application-package`}>Application assistant</Link>
           </Button>
           {isOfferStage(job.status) && (
             <Button asChild variant="outline" size="sm">
-              <Link href={`/dashboard/jobs/${job.id}/offer`}>Offer center</Link>
+              <Link href={`/jobs/${job.id}/offer`}>Offer center</Link>
             </Button>
           )}
           <ReanalyzeButton jobId={job.id} />
@@ -108,7 +108,7 @@ export default async function JobDetailPage({
       {job.duplicateOfJobId && !job.duplicateReviewed && (
         <p className="rounded-md bg-secondary px-3 py-2 text-sm text-muted-foreground">
           This looks like it might be a repeat of a job already in your pipeline.{" "}
-          <Link href="/dashboard/discovery" className="text-primary underline-offset-4 hover:underline">
+          <Link href="/discovery" className="text-primary underline-offset-4 hover:underline">
             Review it on the Discovery page
           </Link>
           .
@@ -145,7 +145,7 @@ export default async function JobDetailPage({
             <CardTitle>Match score</CardTitle>
             <CardDescription>Add a resume to compare it against this job's requirements.</CardDescription>
             <Button asChild className="mt-2 w-fit">
-              <Link href="/dashboard/resumes/new">Add a resume</Link>
+              <Link href="/resumes/new">Add a resume</Link>
             </Button>
           </CardHeader>
         </Card>

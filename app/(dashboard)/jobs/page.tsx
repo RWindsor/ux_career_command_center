@@ -47,7 +47,7 @@ export default async function JobsPage() {
           </p>
         </div>
         <Button asChild>
-          <Link href="/dashboard/jobs/new">
+          <Link href="/jobs/new">
             <Plus className="h-4 w-4" />
             Add job
           </Link>
@@ -63,7 +63,7 @@ export default async function JobsPage() {
               Paste your first job posting and Gemini will pull out the summary, requirements, and keywords.
             </CardDescription>
             <Button asChild className="mt-4">
-              <Link href="/dashboard/jobs/new">Add your first job</Link>
+              <Link href="/jobs/new">Add your first job</Link>
             </Button>
           </CardHeader>
         </Card>

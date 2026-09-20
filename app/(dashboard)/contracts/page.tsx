@@ -29,7 +29,7 @@ export default async function ContractsPage() {
           <p className="text-sm text-muted-foreground">Contract-work opportunities, separate from your full-time job pipeline.</p>
         </div>
         <Button asChild>
-          <Link href="/dashboard/contracts/new">Add opportunity</Link>
+          <Link href="/contracts/new">Add opportunity</Link>
         </Button>
       </div>
 
@@ -52,7 +52,7 @@ export default async function ContractsPage() {
                   </p>
                   {opp.recruiterContactId && contactNameById.has(opp.recruiterContactId) && (
                     <Link
-                      href={`/dashboard/recruiters/contacts/${opp.recruiterContactId}`}
+                      href={`/recruiters/contacts/${opp.recruiterContactId}`}
                       className="text-xs text-primary underline-offset-4 hover:underline"
                     >
                       via {contactNameById.get(opp.recruiterContactId)}

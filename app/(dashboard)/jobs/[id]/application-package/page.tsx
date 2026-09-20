@@ -44,7 +44,7 @@ export default async function ApplicationPackagePage({ params }: { params: { id:
             <CardTitle>Analyze this job first</CardTitle>
             <CardDescription>The application package is built from the job&apos;s Gemini analysis.</CardDescription>
             <Button asChild className="mt-2 w-fit">
-              <Link href={`/dashboard/jobs/${job.id}`}>Go to job</Link>
+              <Link href={`/jobs/${job.id}`}>Go to job</Link>
             </Button>
           </CardHeader>
         </Card>
@@ -54,7 +54,7 @@ export default async function ApplicationPackagePage({ params }: { params: { id:
             <CardTitle>Add a resume first</CardTitle>
             <CardDescription>A tailored application package needs a resume to work from.</CardDescription>
             <Button asChild className="mt-2 w-fit">
-              <Link href="/dashboard/resumes/new">Add a resume</Link>
+              <Link href="/resumes/new">Add a resume</Link>
             </Button>
           </CardHeader>
         </Card>

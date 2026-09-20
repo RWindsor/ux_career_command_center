@@ -32,14 +32,14 @@ export default async function InterviewPrepHubPage() {
             <CardTitle>No jobs yet</CardTitle>
             <CardDescription>Add a job to your pipeline first.</CardDescription>
             <Button asChild className="mt-2 w-fit">
-              <Link href="/dashboard/jobs/new">Add a job</Link>
+              <Link href="/jobs/new">Add a job</Link>
             </Button>
           </CardHeader>
         </Card>
       ) : (
         <div className="flex flex-col gap-3">
           {userJobs.map((job) => (
-            <Link key={job.id} href={`/dashboard/jobs/${job.id}/interview-prep`}>
+            <Link key={job.id} href={`/jobs/${job.id}/interview-prep`}>
               <Card className="transition-colors hover:bg-secondary/50">
                 <CardContent className="flex items-center justify-between gap-4 p-4">
                   <div>

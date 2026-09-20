@@ -44,10 +44,10 @@ export default async function RecruitersPage() {
         </div>
         <div className="flex gap-2">
           <Button asChild variant="outline">
-            <Link href="/dashboard/recruiters/agencies/new">Add agency</Link>
+            <Link href="/recruiters/agencies/new">Add agency</Link>
           </Button>
           <Button asChild>
-            <Link href="/dashboard/recruiters/contacts/new">Add contact</Link>
+            <Link href="/recruiters/contacts/new">Add contact</Link>
           </Button>
         </div>
       </div>
@@ -73,7 +73,7 @@ export default async function RecruitersPage() {
                   </div>
                   <div className="flex flex-col gap-2">
                     {inStatus.map((contact) => (
-                      <Link key={contact.id} href={`/dashboard/recruiters/contacts/${contact.id}`}>
+                      <Link key={contact.id} href={`/recruiters/contacts/${contact.id}`}>
                         <Card className="transition-colors hover:bg-secondary/50">
                           <CardContent className="p-3">
                             <p className="text-sm font-medium">{contact.name}</p>

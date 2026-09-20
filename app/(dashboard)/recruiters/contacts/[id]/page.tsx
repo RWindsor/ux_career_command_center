@@ -81,7 +81,7 @@ export default async function RecruiterContactDetailPage({ params }: { params: {
           {linkedOpportunities.length === 0 ? (
             <p className="text-sm text-muted-foreground">
               None yet.{" "}
-              <Link href="/dashboard/contracts/new" className="text-primary underline-offset-4 hover:underline">
+              <Link href="/contracts/new" className="text-primary underline-offset-4 hover:underline">
                 Add one
               </Link>{" "}
               and connect it to this recruiter.

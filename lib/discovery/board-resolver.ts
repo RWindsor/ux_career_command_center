@@ -44,7 +44,7 @@ export async function resolveBoardsForSearch(search: {
 }): Promise<{ candidates: ResolvedBoardCandidate[]; unsupportedProviders: AtsProvider[] }> {
   if (!webSearchProvider.isConfigured()) {
     throw new Error(
-      `Search-driven discovery needs a web-search API configured (${webSearchProvider.name} — set GOOGLE_SEARCH_API_KEY and GOOGLE_SEARCH_ENGINE_ID). Until then, add specific boards manually below.`
+      `Search-driven discovery needs a web-search API configured (${webSearchProvider.name} — set BRAVE_SEARCH_API_KEY). Until then, add specific boards manually below.`
     );
   }
 

@@ -51,7 +51,7 @@ export default async function JobInterviewPrepPage({ params }: { params: { id: s
               Interview prep is built from the job's Gemini analysis. Run that from the job's page first.
             </CardDescription>
             <Button asChild className="mt-2 w-fit">
-              <Link href={`/dashboard/jobs/${job.id}`}>Go to job</Link>
+              <Link href={`/jobs/${job.id}`}>Go to job</Link>
             </Button>
           </CardHeader>
         </Card>

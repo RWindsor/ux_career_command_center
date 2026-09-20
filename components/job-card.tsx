@@ -7,7 +7,7 @@ import { STAGE_LABELS } from "@/lib/pipeline";
 
 export function JobCard({ job, analysis }: { job: Job; analysis: JobAnalysis | null }) {
   return (
-    <Link href={`/dashboard/jobs/${job.id}`}>
+    <Link href={`/jobs/${job.id}`}>
       <Card className="transition-colors hover:border-primary/50">
         <CardHeader className="flex flex-row items-start justify-between space-y-0">
           <div>

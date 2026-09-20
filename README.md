@@ -51,9 +51,10 @@ So "search-driven discovery" here is two steps, not one:
 1. **Resolve candidate boards** (`lib/discovery/board-resolver.ts`) — a saved search's keywords/location are used
    to run a site-scoped web search (`site:boards.greenhouse.io <keywords>`, etc.) via a configurable web-search
    provider, and any ATS-hosted board URLs in the results are added to your watched boards automatically. This
-   requires `GOOGLE_SEARCH_API_KEY` / `GOOGLE_SEARCH_ENGINE_ID` (a Google Programmable Search Engine — see
-   `.env.local.example`). **Without it configured, saved searches can still be created but board resolution will
-   report a clear error instead of silently finding nothing.**
+   requires `BRAVE_SEARCH_API_KEY` (the Brave Search API — see `.env.local.example`; `SEARCH_PROVIDER` optionally
+   selects among providers registered in `lib/discovery/search-provider.ts`, currently just Brave). **Without it
+   configured, saved searches can still be created but board resolution will report a clear error instead of
+   silently finding nothing.**
 2. **Poll known boards** (`app/actions/ats.ts`, `runDiscoveryForSource`) — every watched board (resolved
    automatically or added by hand) is fetched, filtered to design roles (plus the saved search's own
    keywords/location if it came from one), deduplicated, persisted, and analyzed with Gemini. This step needs no
@@ -78,8 +79,8 @@ Fill in `.env.local`:
 - `NEXT_PUBLIC_SITE_URL` — `http://localhost:3000` locally, your deployed URL in production.
 - `GEMINI_API_KEY` (+ optional `GEMINI_MODEL`) — from https://aistudio.google.com/apikey.
 - `CRON_SECRET` — any random string; also set on Vercel (see **Scheduled jobs** below).
-- `GOOGLE_SEARCH_API_KEY` / `GOOGLE_SEARCH_ENGINE_ID` — optional, only needed for search-driven job discovery (see
-  above). Everything else works without it.
+- `BRAVE_SEARCH_API_KEY` (+ optional `SEARCH_PROVIDER`, defaults to `brave`) — optional, only needed for
+  search-driven job discovery (see above). Everything else works without it.
 
 Apply the schema (additive-only — see `lib/db/migrations/0001_pipeline_and_ats.sql` for the exact SQL if you'd
 rather review it than push):

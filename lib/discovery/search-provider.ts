@@ -18,48 +18,83 @@ export interface WebSearchProvider {
 }
 
 /**
- * Google Programmable Search Engine (Custom Search JSON API) — a
- * stable, documented Google product built for exactly this kind of
- * site-scoped search. Requires a Search Engine configured to search
- * the whole web (or at least the ATS hosting domains) plus an API key.
- * Docs: https://developers.google.com/custom-search/v1/overview
+ * Brave Search API — a currently-supported, actively maintained full-web
+ * search API with a straightforward single-header auth model. Chosen
+ * after Google's Custom Search JSON API (the prior provider here) turned
+ * out to be closed to new customers and returning 403 even with valid
+ * credentials.
+ * Docs: https://api-dashboard.search.brave.com/app/documentation/web-search/get-started
  *
  * This is the ONE piece of the discovery pipeline that costs money and
  * needs its own credentials — everything downstream (fetching a known
  * board, filtering, deduping, persisting, analyzing) is free and
- * unauthenticated. If these env vars aren't set, `isConfigured()`
+ * unauthenticated. If BRAVE_SEARCH_API_KEY isn't set, `isConfigured()`
  * returns false and callers fall back to the documented manual
  * board-watching flow (see app/(dashboard)/discovery).
  */
-export const googleCseProvider: WebSearchProvider = {
-  name: "Google Programmable Search",
+export const braveSearchProvider: WebSearchProvider = {
+  name: "Brave Search",
   isConfigured() {
-    return Boolean(process.env.GOOGLE_SEARCH_API_KEY && process.env.GOOGLE_SEARCH_ENGINE_ID);
+    return Boolean(process.env.BRAVE_SEARCH_API_KEY);
   },
   async search(query: string): Promise<WebSearchResult[]> {
-    const apiKey = process.env.GOOGLE_SEARCH_API_KEY;
-    const cx = process.env.GOOGLE_SEARCH_ENGINE_ID;
-    if (!apiKey || !cx) {
-      throw new Error("GOOGLE_SEARCH_API_KEY / GOOGLE_SEARCH_ENGINE_ID are not set.");
+    const apiKey = process.env.BRAVE_SEARCH_API_KEY;
+    if (!apiKey) {
+      throw new Error("BRAVE_SEARCH_API_KEY is not set.");
     }
 
-    const url = `https://www.googleapis.com/customsearch/v1?key=${encodeURIComponent(apiKey)}&cx=${encodeURIComponent(cx)}&num=10&q=${encodeURIComponent(query)}`;
-    const res = await fetch(url, { headers: { Accept: "application/json" } });
+    const url = `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(query)}&count=10`;
+    const res = await fetch(url, {
+      headers: {
+        Accept: "application/json",
+        "Accept-Encoding": "gzip",
+        "X-Subscription-Token": apiKey,
+      },
+    });
 
     if (!res.ok) {
       const body = await res.text().catch(() => "");
-      throw new Error(`Google Programmable Search returned ${res.status}. ${body.slice(0, 200)}`);
+      throw new Error(`Brave Search returned ${res.status}. ${body.slice(0, 200)}`);
     }
 
     const data = (await res.json()) as {
-      items?: { title?: string; link?: string; snippet?: string }[];
+      web?: { results?: { title?: string; url?: string; description?: string }[] };
     };
 
-    return (data.items ?? [])
-      .filter((item): item is { title: string; link: string; snippet?: string } => Boolean(item.link))
-      .map((item) => ({ title: item.title ?? item.link, url: item.link, snippet: item.snippet ?? "" }));
+    return (data.web?.results ?? [])
+      .filter((item): item is { title?: string; url: string; description?: string } => Boolean(item.url))
+      .map((item) => ({ title: item.title ?? item.url, url: item.url, snippet: item.description ?? "" }));
   },
 };
 
-/** The provider the resolver uses. Swap here if you'd rather wire up Bing or another provider. */
-export const webSearchProvider: WebSearchProvider = googleCseProvider;
+/**
+ * Small registry so a different full-web search provider can be swapped
+ * in later without touching board-resolver.ts or any UI — add an entry
+ * here and point SEARCH_PROVIDER at its key. Only Brave is implemented
+ * today.
+ */
+const SEARCH_PROVIDERS: Record<string, WebSearchProvider> = {
+  brave: braveSearchProvider,
+};
+
+function resolveConfiguredProvider(): WebSearchProvider {
+  const key = (process.env.SEARCH_PROVIDER || "brave").trim().toLowerCase();
+  return SEARCH_PROVIDERS[key] ?? braveSearchProvider;
+}
+
+/**
+ * The provider the resolver actually uses — resolved from SEARCH_PROVIDER
+ * (default "brave") on every call, so an env var change takes effect
+ * without any code change.
+ */
+export const webSearchProvider: WebSearchProvider = {
+  get name() {
+    return resolveConfiguredProvider().name;
+  },
+  isConfigured() {
+    return resolveConfiguredProvider().isConfigured();
+  },
+  search(query: string) {
+    return resolveConfiguredProvider().search(query);
+  },
+};

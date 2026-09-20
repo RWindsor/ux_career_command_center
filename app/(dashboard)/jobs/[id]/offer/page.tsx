@@ -51,7 +51,7 @@ export default async function OfferPage({ params }: { params: { id: string } }) 
             <CardTitle>Analyze this job first</CardTitle>
             <CardDescription>Offer prep is built from the job&apos;s Gemini analysis.</CardDescription>
             <Button asChild className="mt-2 w-fit">
-              <Link href={`/dashboard/jobs/${job.id}`}>Go to job</Link>
+              <Link href={`/jobs/${job.id}`}>Go to job</Link>
             </Button>
           </CardHeader>
         </Card>

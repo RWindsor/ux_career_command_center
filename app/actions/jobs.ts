@@ -76,10 +76,10 @@ export async function createJob(
     await runAnalysis(job.id, description);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Analysis failed.";
-    redirect(`/dashboard/jobs/${job.id}?analysisError=${encodeURIComponent(message)}`);
+    redirect(`/jobs/${job.id}?analysisError=${encodeURIComponent(message)}`);
   }
 
-  redirect(`/dashboard/jobs/${job.id}`);
+  redirect(`/jobs/${job.id}`);
 }
 
 export async function updateJobStatus(jobId: string, status: PipelineStage): Promise<{ error: string } | void> {

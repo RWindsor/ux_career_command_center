@@ -50,7 +50,7 @@ export default async function ResumesPage({
           </p>
         </div>
         <Button asChild>
-          <Link href="/dashboard/resumes/new">
+          <Link href="/resumes/new">
             <Plus className="h-4 w-4" />
             Add resume
           </Link>
@@ -73,7 +73,7 @@ export default async function ResumesPage({
               Add a resume so Match Scoring has something to compare jobs against.
             </CardDescription>
             <Button asChild className="mt-4">
-              <Link href="/dashboard/resumes/new">Add your first resume</Link>
+              <Link href="/resumes/new">Add your first resume</Link>
             </Button>
           </CardHeader>
         </Card>
