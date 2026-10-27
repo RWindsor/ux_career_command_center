@@ -68,7 +68,7 @@ export async function createJob(
     })
     .returning();
 
-  revalidatePath("/dashboard/jobs");
+  revalidatePath("/jobs");
 
   // The job is saved regardless of what happens next — a flaky Gemini
   // call should never lose the posting the user just pasted in.
@@ -94,10 +94,15 @@ export async function updateJobStatus(jobId: string, status: PipelineStage): Pro
   }
 
   // Stage changes never touch notes/history — only the status column moves.
-  await db.update(jobs).set({ status, updatedAt: new Date() }).where(eq(jobs.id, jobId));
+  // Restoring a system-archived job: clear the marker so it counts as the user's own again.
+  const restoring = job.status === "archived" && job.autoArchivedAt != null;
+  await db
+    .update(jobs)
+    .set({ status, updatedAt: new Date(), ...(restoring ? { autoArchivedAt: null, autoArchiveReason: null } : {}) })
+    .where(eq(jobs.id, jobId));
 
-  revalidatePath(`/dashboard/jobs/${jobId}`);
-  revalidatePath("/dashboard/jobs");
+  revalidatePath(`/jobs/${jobId}`);
+  revalidatePath("/jobs");
 }
 
 export async function setOfferCompensation(jobId: string, offerCompensation: string): Promise<{ error: string } | void> {
@@ -108,7 +113,7 @@ export async function setOfferCompensation(jobId: string, offerCompensation: str
   }
 
   await db.update(jobs).set({ offerCompensation: offerCompensation.trim() || null, updatedAt: new Date() }).where(eq(jobs.id, jobId));
-  revalidatePath(`/dashboard/jobs/${jobId}/offer`);
+  revalidatePath(`/jobs/${jobId}/offer`);
 }
 
 export async function reanalyzeJob(jobId: string): Promise<{ error: string } | void> {
@@ -125,7 +130,7 @@ export async function reanalyzeJob(jobId: string): Promise<{ error: string } | v
     return { error: error instanceof Error ? error.message : "Analysis failed." };
   }
 
-  revalidatePath(`/dashboard/jobs/${jobId}`);
+  revalidatePath(`/jobs/${jobId}`);
 }
 
 export async function deleteJob(jobId: string): Promise<void> {
@@ -137,6 +142,6 @@ export async function deleteJob(jobId: string): Promise<void> {
   }
 
   await db.delete(jobs).where(eq(jobs.id, jobId));
-  revalidatePath("/dashboard/jobs");
-  redirect("/dashboard/jobs");
+  revalidatePath("/jobs");
+  redirect("/jobs");
 }

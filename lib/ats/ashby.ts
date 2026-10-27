@@ -35,6 +35,10 @@ export const ashbyAdapter: AtsAdapter = {
         descriptionHtml?: string;
         jobUrl?: string;
         applyUrl?: string;
+        employmentType?: string;
+        workplaceType?: string;
+        isRemote?: boolean;
+        address?: { postalAddress?: { addressCountry?: string } };
       }[];
     };
 
@@ -50,6 +54,10 @@ export const ashbyAdapter: AtsAdapter = {
       location: job.location ?? null,
       description: job.descriptionPlain ?? (job.descriptionHtml ? stripHtml(job.descriptionHtml) : ""),
       url: job.jobUrl ?? job.applyUrl ?? null,
+      // Optional hints — not verified against a live board from this environment; absent => unknown.
+      employmentType: job.employmentType ?? null,
+      workplaceType: job.workplaceType ?? (job.isRemote === true ? "remote" : null),
+      countryCodes: job.address?.postalAddress?.addressCountry ? [job.address.postalAddress.addressCountry] : undefined,
     }));
   },
 };

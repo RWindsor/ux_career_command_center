@@ -35,7 +35,8 @@ export const smartrecruitersAdapter: AtsAdapter = {
       content?: {
         id: string;
         name: string;
-        location?: { city?: string; region?: string; country?: string };
+        location?: { city?: string; region?: string; country?: string; remote?: boolean; hybrid?: boolean };
+        typeOfEmployment?: { label?: string };
         applyUrl?: string;
         ref?: string;
       }[];
@@ -80,6 +81,10 @@ export const smartrecruitersAdapter: AtsAdapter = {
           location: location || null,
           description: description || `(Full description unavailable — view the original posting for details.)`,
           url: posting.applyUrl ?? null,
+          // Optional hints — not verified against a live company from this environment; absent => unknown.
+          employmentType: posting.typeOfEmployment?.label ?? null,
+          workplaceType: posting.location?.hybrid ? "hybrid" : posting.location?.remote ? "remote" : null,
+          countryCodes: posting.location?.country ? [posting.location.country] : undefined,
         };
         return listing;
       })

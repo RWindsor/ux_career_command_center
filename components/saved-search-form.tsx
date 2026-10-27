@@ -5,6 +5,7 @@ import { createSavedSearch } from "@/app/actions/saved-searches";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { COUNTRIES } from "@/lib/discovery/eligibility";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 
 const PROVIDER_OPTIONS = [
@@ -13,6 +14,9 @@ const PROVIDER_OPTIONS = [
   { value: "ashby", label: "Ashby" },
   { value: "smartrecruiters", label: "SmartRecruiters" },
 ] as const;
+
+const selectClass =
+  "flex h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2";
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -59,12 +63,45 @@ export function SavedSearchForm({ searchConfigured }: { searchConfigured: boolea
               <Input id="keywords" name="keywords" placeholder="Product Designer, UX Designer, Senior Designer" required />
             </div>
             <div className="flex flex-col gap-2">
-              <Label htmlFor="locationQuery">Location / remote preference (optional)</Label>
-              <Input id="locationQuery" name="locationQuery" placeholder="Remote" />
+              <Label htmlFor="eligibleCountry">Eligible country</Label>
+              <select id="eligibleCountry" name="eligibleCountry" defaultValue="US" className={selectClass}>
+                <option value="">Select a country (imports stay paused)</option>
+                {COUNTRIES.map((c) => (
+                  <option key={c.code} value={c.code}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-muted-foreground">Postings must state this country. &ldquo;Remote&rdquo; alone isn&apos;t enough — unclear ones go to Needs review.</p>
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="eligibleState">State eligibility (optional)</Label>
+              <select id="eligibleState" name="eligibleState" defaultValue="any" className={selectClass}>
+                <option value="any">No state rule</option>
+                <option value="CA">California residents must be eligible</option>
+              </select>
+              <p className="text-xs text-muted-foreground">Explicit exclusions of California are rejected; unclear state wording goes to Needs review.</p>
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="workArrangement">Work arrangement</Label>
+              <select id="workArrangement" name="workArrangement" defaultValue="remote" className={selectClass}>
+                <option value="any">Any</option>
+                <option value="remote">Remote</option>
+                <option value="hybrid">Hybrid</option>
+                <option value="onsite">On-site</option>
+              </select>
             </div>
             <div className="flex flex-col gap-2">
               <Label htmlFor="employmentType">Employment type (optional)</Label>
               <Input id="employmentType" name="employmentType" placeholder="Full-time" />
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="excludedTitleTerms">Exclude titles containing (comma-separated)</Label>
+              <Input id="excludedTitleTerms" name="excludedTitleTerms" placeholder="Intern, Junior, Manager, Director" />
+            </div>
+            <div className="flex flex-col gap-2 sm:col-span-2">
+              <Label htmlFor="locationQuery">Extra location text to match (optional)</Label>
+              <Input id="locationQuery" name="locationQuery" placeholder="Leave blank unless you need a specific city/region" />
             </div>
           </div>
 

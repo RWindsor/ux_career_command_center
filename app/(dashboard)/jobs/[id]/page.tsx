@@ -76,6 +76,10 @@ export default async function JobDetailPage({
             {job.company}
             {job.location ? ` · ${job.location}` : ""}
           </p>
+          {job.discoveryReason && <p className="mt-1 text-xs text-muted-foreground">{job.discoveryReason}</p>}
+          {job.autoArchivedAt && (
+            <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">Auto-archived: {job.autoArchiveReason ?? "no longer matches your saved searches"}. Change the stage to restore it.</p>
+          )}
           {job.jobUrl && (
             <a
               href={job.jobUrl}

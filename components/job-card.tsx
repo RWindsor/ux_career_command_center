@@ -26,6 +26,9 @@ export function JobCard({ job, analysis }: { job: Job; analysis: JobAnalysis | n
           </div>
         </CardHeader>
         <CardContent>
+          {job.discoveryReason && job.discoveryState === "accepted" && (
+            <p className="mb-2 text-xs text-muted-foreground">{job.discoveryReason}</p>
+          )}
           {analysis ? (
             <>
               <p className="line-clamp-2 text-sm text-muted-foreground">{analysis.summary}</p>

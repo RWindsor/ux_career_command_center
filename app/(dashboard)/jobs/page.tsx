@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { desc, eq, inArray } from "drizzle-orm";
+import { and, count, desc, eq, inArray, ne, or, isNull } from "drizzle-orm";
 import { Plus, Briefcase } from "lucide-react";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
@@ -8,15 +8,30 @@ import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { JobCard } from "@/components/job-card";
 
-export default async function JobsPage() {
+export default async function JobsPage({ searchParams }: { searchParams: { view?: string } }) {
+  const showArchived = searchParams?.view === "archived";
   const session = await auth();
   const userId = session!.user!.id;
 
   const userJobs = await db
     .select()
     .from(jobs)
-    .where(eq(jobs.userId, userId))
+    .where(
+      and(
+        eq(jobs.userId, userId),
+        // Default feed hides archived jobs and anything still waiting in Needs review (that queue lives on /discovery).
+        showArchived
+          ? eq(jobs.status, "archived")
+          : and(ne(jobs.status, "archived"), or(isNull(jobs.discoveryState), ne(jobs.discoveryState, "needs_review")))
+      )
+    )
     .orderBy(desc(jobs.createdAt));
+
+  // Ambiguous imports wait on /discovery and are hidden from this feed — surface how many are waiting.
+  const [{ value: needsReviewCount }] = await db
+    .select({ value: count() })
+    .from(jobs)
+    .where(and(eq(jobs.userId, userId), eq(jobs.discoveryState, "needs_review"), ne(jobs.status, "archived")));
 
   const analysesByJob = new Map<string, JobAnalysis>();
   if (userJobs.length > 0) {
@@ -43,7 +58,19 @@ export default async function JobsPage() {
         <div>
           <h2 className="font-display text-2xl font-semibold tracking-tight">Job Pipeline</h2>
           <p className="text-sm text-muted-foreground">
-            {userJobs.length} job{userJobs.length === 1 ? "" : "s"} tracked
+            {userJobs.length} {showArchived ? "archived" : "tracked"} job{userJobs.length === 1 ? "" : "s"} ·{" "}
+            <Link href={showArchived ? "/jobs" : "/jobs?view=archived"} className="underline">
+              {showArchived ? "Back to pipeline" : "View archived"}
+            </Link>
+            {needsReviewCount > 0 && (
+              <>
+                {" "}
+                ·{" "}
+                <Link href="/discovery" className="font-medium text-amber-600 underline dark:text-amber-400">
+                  Needs review ({needsReviewCount})
+                </Link>
+              </>
+            )}
           </p>
         </div>
         <Button asChild>

@@ -19,6 +19,14 @@ export interface NormalizedListing {
   description: string;
   /** Canonical/apply URL on the source, when the API provides one. */
   url: string | null;
+  /**
+   * Optional structured hints, populated only when the provider's list API supplies them
+   * (see each adapter). Absent = unknown, never "false" — eligibility falls back to text
+   * parsing and then to Needs review.
+   */
+  employmentType?: string | null;
+  workplaceType?: string | null;
+  countryCodes?: string[];
 }
 
 export class AtsFetchError extends Error {

@@ -2,7 +2,8 @@
 
 import * as React from "react";
 import { Search, Trash2, Power } from "lucide-react";
-import { resolveSavedSearchNow, deleteSavedSearch, toggleSavedSearch } from "@/app/actions/saved-searches";
+import { resolveSavedSearchNow, deleteSavedSearch, toggleSavedSearch, updateSavedSearchControls } from "@/app/actions/saved-searches";
+import { COUNTRIES } from "@/lib/discovery/eligibility";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
@@ -21,7 +22,16 @@ function SearchRow({ search }: { search: SavedSearch }) {
             {search.keywords.join(", ")}
             {search.locationQuery ? ` · ${search.locationQuery}` : ""}
             {search.employmentType ? ` · ${search.employmentType}` : ""}
+            {search.workArrangement ? ` · ${search.workArrangement}` : ""}
+            {search.eligibleCountry ? ` · ${search.eligibleCountry} only` : ""}
+            {search.eligibleState ? ` · ${search.eligibleState} residents eligible` : ""}
+            {search.excludedTitleTerms?.length ? ` · excludes: ${search.excludedTitleTerms.join(", ")}` : ""}
           </p>
+          {!search.eligibleCountry && (
+            <p className="text-xs text-amber-600 dark:text-amber-400">
+              No eligible country set — imports are paused until every active search has one. Use Edit filters to set it.
+            </p>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <Badge variant={search.enabled ? "secondary" : "outline"}>{search.enabled ? "Active" : "Paused"}</Badge>
@@ -62,6 +72,60 @@ function SearchRow({ search }: { search: SavedSearch }) {
         </div>
       </div>
       {error && <p className="text-xs text-destructive">{error}</p>}
+      <details className="text-sm">
+        <summary className="cursor-pointer text-xs text-muted-foreground">Edit filters</summary>
+        <form
+          className="mt-2 grid gap-3 sm:grid-cols-2"
+          action={(formData) => {
+            setError(null);
+            startTransition(async () => {
+              const result = await updateSavedSearchControls(search.id, formData);
+              if (result?.error) setError(result.error);
+            });
+          }}
+        >
+          <label className="flex flex-col gap-1 text-xs">
+            Eligible country
+            <select name="eligibleCountry" defaultValue={search.eligibleCountry ?? ""} className="h-9 rounded-md border border-input bg-background px-2 text-sm">
+              <option value="">Select a country (imports stay paused)</option>
+              {COUNTRIES.map((c) => (
+                <option key={c.code} value={c.code}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="flex flex-col gap-1 text-xs">
+            State eligibility
+            <select name="eligibleState" defaultValue={search.eligibleState ?? "any"} className="h-9 rounded-md border border-input bg-background px-2 text-sm">
+              <option value="any">No state rule</option>
+              <option value="CA">California</option>
+            </select>
+          </label>
+          <label className="flex flex-col gap-1 text-xs">
+            Work arrangement
+            <select name="workArrangement" defaultValue={search.workArrangement ?? "any"} className="h-9 rounded-md border border-input bg-background px-2 text-sm">
+              <option value="any">Any</option>
+              <option value="remote">Remote</option>
+              <option value="hybrid">Hybrid</option>
+              <option value="onsite">On-site</option>
+            </select>
+          </label>
+          <label className="flex flex-col gap-1 text-xs">
+            Employment type
+            <input name="employmentType" defaultValue={search.employmentType ?? ""} className="h-9 rounded-md border border-input bg-background px-2 text-sm" />
+          </label>
+          <label className="flex flex-col gap-1 text-xs">
+            Exclude titles containing
+            <input name="excludedTitleTerms" defaultValue={(search.excludedTitleTerms ?? []).join(", ")} className="h-9 rounded-md border border-input bg-background px-2 text-sm" />
+          </label>
+          <div className="sm:col-span-2">
+            <Button type="submit" size="sm" disabled={isPending}>
+              Save filters
+            </Button>
+          </div>
+        </form>
+      </details>
       {search.lastResolvedAt && (
         <p className="text-xs text-muted-foreground">
           Last resolved {new Date(search.lastResolvedAt).toLocaleString()} ·{" "}

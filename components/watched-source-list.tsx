@@ -2,7 +2,8 @@
 
 import * as React from "react";
 import { RefreshCw, Trash2, Power } from "lucide-react";
-import { runDiscoveryNow, deleteWatchedSource, toggleWatchedSource } from "@/app/actions/ats";
+import { runDiscoveryNow, deleteWatchedSource, toggleWatchedSource, setSourceExclusion, setSourceExclusionOverride } from "@/app/actions/ats";
+import { REJECT_LABELS, REVIEW_LABELS } from "@/lib/discovery/eligibility";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
@@ -25,7 +26,34 @@ function SourceRow({ source }: { source: AtsWatchedSource }) {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          {source.excluded && <Badge variant="destructive">{source.exclusionOverride ? "Excluded (override on)" : "Excluded"}</Badge>}
           <Badge variant={source.enabled ? "secondary" : "outline"}>{source.enabled ? "Watching" : "Paused"}</Badge>
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            disabled={isPending}
+            onClick={() => {
+              setError(null);
+              startTransition(async () => {
+                const result = await setSourceExclusion(source.id, !source.excluded, source.excluded ? undefined : window.prompt("Why exclude this source? (optional)") ?? undefined);
+                if (result?.error) setError(result.error);
+              });
+            }}
+          >
+            {source.excluded ? "Remove exclusion" : "Exclude"}
+          </Button>
+          {source.excluded && (
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              disabled={isPending}
+              onClick={() => startTransition(async () => { await setSourceExclusionOverride(source.id, !source.exclusionOverride); })}
+            >
+              {source.exclusionOverride ? "Turn override off" : "Allow anyway"}
+            </Button>
+          )}
           {supportsAutomation && (
             <Button
               type="button"
@@ -41,7 +69,7 @@ function SourceRow({ source }: { source: AtsWatchedSource }) {
               }}
             >
               <RefreshCw className={`h-3.5 w-3.5 ${isPending ? "animate-spin" : ""}`} />
-              Run now
+              Run now (up to 10 new)
             </Button>
           )}
           <Button
@@ -71,13 +99,27 @@ function SourceRow({ source }: { source: AtsWatchedSource }) {
           employer manually.
         </p>
       )}
+      {source.excluded && source.exclusionReason && <p className="text-xs text-muted-foreground">Exclusion reason: {source.exclusionReason}</p>}
+      {source.lastRunStats && (Object.keys(source.lastRunStats.rejected).length > 0 || Object.keys(source.lastRunStats.review).length > 0) && (
+        <p className="text-xs text-muted-foreground">
+          {Object.entries(source.lastRunStats.rejected).map(([code, n]) => `${REJECT_LABELS[code] ?? code}: ${n}`).join(" · ")}
+          {Object.keys(source.lastRunStats.review).length > 0 && (
+            <>
+              {" | to review — "}
+              {Object.entries(source.lastRunStats.review).map(([code, n]) => `${REVIEW_LABELS[code] ?? code}: ${n}`).join(" · ")}
+            </>
+          )}
+        </p>
+      )}
       {source.lastRunAt && (
         <p className="text-xs text-muted-foreground">
           Last run {new Date(source.lastRunAt).toLocaleString()} ·{" "}
           {source.lastRunStatus === "error" ? (
             <span className="text-destructive">{source.lastRunError}</span>
+          ) : source.lastRunStatus === "skipped" ? (
+            <span className="text-amber-600 dark:text-amber-400">{source.lastRunError}</span>
           ) : (
-            `${source.lastRunJobsFound ?? 0} matching listing${source.lastRunJobsFound === 1 ? "" : "s"} found, ${source.lastRunJobsNew ?? 0} new`
+            `${source.lastRunJobsFound ?? 0} qualifying listing${source.lastRunJobsFound === 1 ? "" : "s"} (incl. needs-review), ${source.lastRunJobsNew ?? 0} new`
           )}
         </p>
       )}
