@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { CRON_PAUSED_MESSAGE, discoveryCronEnabled } from "@/lib/discovery/rollout";
 import { resolveAllSavedSearches } from "@/app/actions/saved-searches";
 
 export const dynamic = "force-dynamic";
@@ -18,6 +19,10 @@ export async function GET(request: Request) {
   const authHeader = request.headers.get("authorization");
   if (!process.env.CRON_SECRET || authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  if (!discoveryCronEnabled()) {
+    return NextResponse.json({ ranAt: new Date().toISOString(), paused: true, message: CRON_PAUSED_MESSAGE });
   }
 
   const result = await resolveAllSavedSearches();
