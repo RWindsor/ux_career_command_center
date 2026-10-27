@@ -9,8 +9,55 @@ import { resolveBoardsForSearch } from "@/lib/discovery/board-resolver";
 import { runDiscoveryForSource } from "@/app/actions/ats";
 import type { AtsProvider } from "@/lib/ats/types";
 import { ATS_PROVIDER_LABELS } from "@/lib/ats";
+import { normalizeArrangementSetting, normalizeEmploymentType, normalizeStateSetting, resolveCountry } from "@/lib/discovery/eligibility";
 
 const RESOLVABLE_PROVIDERS: AtsProvider[] = ["greenhouse", "lever", "ashby", "smartrecruiters"];
+
+/** Parses + validates the three eligibility controls (plus employment type). Returns an error string or the clean values. */
+function parseEligibilityControls(formData: FormData):
+  | { error: string }
+  | { eligibleCountry: string | null; eligibleState: string | null; workArrangement: string | null; excludedTitleTerms: string[]; employmentType: string | null } {
+  const countryRaw = String(formData.get("eligibleCountry") ?? "").trim();
+  const stateRaw = String(formData.get("eligibleState") ?? "").trim();
+  const arrangementRaw = String(formData.get("workArrangement") ?? "").trim();
+  const excludedRaw = String(formData.get("excludedTitleTerms") ?? "").trim();
+  const employmentRaw = String(formData.get("employmentType") ?? "").trim();
+
+  let eligibleCountry: string | null = null;
+  if (countryRaw) {
+    const country = resolveCountry(countryRaw);
+    if (!country) return { error: `Eligible country "${countryRaw}" isn't recognized — pick one from the list.` };
+    eligibleCountry = country.code;
+  }
+
+  let eligibleState: string | null = null;
+  if (stateRaw && stateRaw !== "any") {
+    eligibleState = normalizeStateSetting(stateRaw);
+    if (!eligibleState) return { error: "State eligibility only supports California for now." };
+    if (eligibleCountry && eligibleCountry !== "US") return { error: "A California rule needs the eligible country to be the United States." };
+  }
+
+  let workArrangement: string | null = null;
+  if (arrangementRaw && arrangementRaw !== "any") {
+    workArrangement = normalizeArrangementSetting(arrangementRaw);
+    if (!workArrangement) return { error: "Work arrangement must be Remote, Hybrid, or On-site." };
+  }
+
+  let employmentType: string | null = null;
+  if (employmentRaw) {
+    if (!normalizeEmploymentType(employmentRaw)) {
+      return { error: `Employment type "${employmentRaw}" isn't recognized — use Full-time, Part-time, Contract, Internship, or Temporary.` };
+    }
+    employmentType = employmentRaw;
+  }
+
+  const excludedTitleTerms = excludedRaw
+    .split(",")
+    .map((t) => t.trim())
+    .filter(Boolean);
+
+  return { eligibleCountry, eligibleState, workArrangement, excludedTitleTerms, employmentType };
+}
 
 export async function createSavedSearch(_prevState: unknown, formData: FormData): Promise<{ error: string } | void> {
   const userId = await requireUserId();
@@ -18,7 +65,6 @@ export async function createSavedSearch(_prevState: unknown, formData: FormData)
   const label = String(formData.get("label") ?? "").trim();
   const keywordsRaw = String(formData.get("keywords") ?? "").trim();
   const locationQuery = String(formData.get("locationQuery") ?? "").trim();
-  const employmentType = String(formData.get("employmentType") ?? "").trim();
   const providers = formData.getAll("providers").map(String) as AtsProvider[];
 
   const keywords = keywordsRaw
@@ -34,6 +80,9 @@ export async function createSavedSearch(_prevState: unknown, formData: FormData)
     return { error: "Choose at least one ATS ecosystem to search." };
   }
 
+  const controls = parseEligibilityControls(formData);
+  if ("error" in controls) return { error: controls.error };
+
   const [search] = await db
     .insert(savedSearches)
     .values({
@@ -41,17 +90,21 @@ export async function createSavedSearch(_prevState: unknown, formData: FormData)
       label: label || keywords.join(", "),
       keywords,
       locationQuery: locationQuery || null,
-      employmentType: employmentType || null,
+      employmentType: controls.employmentType,
+      eligibleCountry: controls.eligibleCountry,
+      eligibleState: controls.eligibleState,
+      workArrangement: controls.workArrangement,
+      excludedTitleTerms: controls.excludedTitleTerms,
       providers: validProviders,
     })
     .returning();
 
-  revalidatePath("/dashboard/discovery");
+  revalidatePath("/discovery");
 
   // Resolve immediately so the user sees results without waiting for the nightly cron.
   await resolveSavedSearchInternal(search);
-  revalidatePath("/dashboard/discovery");
-  revalidatePath("/dashboard/jobs");
+  revalidatePath("/discovery");
+  revalidatePath("/jobs");
 }
 
 export async function deleteSavedSearch(searchId: string): Promise<void> {
@@ -60,10 +113,12 @@ export async function deleteSavedSearch(searchId: string): Promise<void> {
   if (!search || search.userId !== userId) throw new Error("Saved search not found.");
 
   await db.delete(savedSearches).where(eq(savedSearches.id, searchId));
-  // Boards this search discovered are left in place (they may still be useful, and
-  // deleting a search should never silently delete job history) — the user can remove
-  // an individual board from the watched-boards list if they no longer want it.
-  revalidatePath("/dashboard/discovery");
+  // Boards this search discovered stay in place and job history is untouched. They do NOT
+  // become unrestricted: imports are gated by the user's remaining ENABLED searches (and
+  // import nothing if there are none) — see runDiscoveryForSource. The dangling link is cleared
+  // so nothing keeps pointing at a search that no longer exists.
+  await db.update(atsWatchedSources).set({ discoveredViaSearchId: null }).where(eq(atsWatchedSources.discoveredViaSearchId, searchId));
+  revalidatePath("/discovery");
 }
 
 export async function toggleSavedSearch(searchId: string, enabled: boolean): Promise<void> {
@@ -72,7 +127,30 @@ export async function toggleSavedSearch(searchId: string, enabled: boolean): Pro
   if (!search || search.userId !== userId) throw new Error("Saved search not found.");
 
   await db.update(savedSearches).set({ enabled, updatedAt: new Date() }).where(eq(savedSearches.id, searchId));
-  revalidatePath("/dashboard/discovery");
+  revalidatePath("/discovery");
+}
+
+/** Edit the eligibility controls on an existing search (used to add a country to pre-patch searches). */
+export async function updateSavedSearchControls(searchId: string, formData: FormData): Promise<{ error: string } | void> {
+  const userId = await requireUserId();
+  const [search] = await db.select().from(savedSearches).where(eq(savedSearches.id, searchId)).limit(1);
+  if (!search || search.userId !== userId) return { error: "Saved search not found." };
+
+  const controls = parseEligibilityControls(formData);
+  if ("error" in controls) return { error: controls.error };
+
+  await db
+    .update(savedSearches)
+    .set({
+      eligibleCountry: controls.eligibleCountry,
+      eligibleState: controls.eligibleState,
+      workArrangement: controls.workArrangement,
+      excludedTitleTerms: controls.excludedTitleTerms,
+      employmentType: controls.employmentType,
+      updatedAt: new Date(),
+    })
+    .where(eq(savedSearches.id, searchId));
+  revalidatePath("/discovery");
 }
 
 /**
@@ -149,8 +227,8 @@ export async function resolveSavedSearchNow(searchId: string): Promise<{ error: 
   if (!search || search.userId !== userId) return { error: "Saved search not found." };
 
   const result = await resolveSavedSearchInternal(search);
-  revalidatePath("/dashboard/discovery");
-  revalidatePath("/dashboard/jobs");
+  revalidatePath("/discovery");
+  revalidatePath("/jobs");
   if ("error" in result) return { error: result.error };
 }
 

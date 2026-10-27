@@ -8,6 +8,9 @@ import { SavedSearchList } from "@/components/saved-search-list";
 import { WatchedSourceForm } from "@/components/watched-source-form";
 import { WatchedSourceList } from "@/components/watched-source-list";
 import { DuplicateReviewCard } from "@/components/duplicate-review-card";
+import { NeedsReviewCard } from "@/components/needs-review-card";
+import { REJECT_LABELS, REVIEW_LABELS } from "@/lib/discovery/eligibility";
+import { isHiddenDiscoveryJob } from "@/lib/discovery/visibility";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { webSearchProvider } from "@/lib/discovery/search-provider";
 
@@ -21,7 +24,17 @@ export default async function DiscoveryPage() {
     db.select().from(jobs).where(eq(jobs.userId, userId)),
   ]);
 
-  const duplicateQueue = allJobs.filter((job) => job.duplicateOfJobId && !job.duplicateReviewed);
+  const duplicateQueue = allJobs.filter((job) => job.duplicateOfJobId && !job.duplicateReviewed && !isHiddenDiscoveryJob(job));
+  const needsReview = allJobs.filter((job) => job.discoveryState === "needs_review" && job.status !== "archived");
+  const noEnabledSearch = !searches.some((s) => s.enabled);
+
+  // Last-run rejection counts, summed across every watched source.
+  const rejectedTotals: Record<string, number> = {};
+  const reviewTotals: Record<string, number> = {};
+  for (const source of sources) {
+    for (const [code, n] of Object.entries(source.lastRunStats?.rejected ?? {})) rejectedTotals[code] = (rejectedTotals[code] ?? 0) + n;
+    for (const [code, n] of Object.entries(source.lastRunStats?.review ?? {})) reviewTotals[code] = (reviewTotals[code] ?? 0) + n;
+  }
   const jobsById = new Map(allJobs.map((job) => [job.id, job]));
 
   return (
@@ -34,8 +47,53 @@ export default async function DiscoveryPage() {
         </p>
       </div>
 
+      {noEnabledSearch && (
+        <p className="rounded-md bg-amber-500/10 px-3 py-2 text-sm text-amber-700 dark:text-amber-300">
+          No saved search is enabled, so automatic imports are paused for every board (nothing is imported without a search to qualify against).
+        </p>
+      )}
+
       <SavedSearchForm searchConfigured={webSearchProvider.isConfigured()} />
       <SavedSearchList searches={searches} />
+
+      {needsReview.length > 0 && (
+        <div className="flex flex-col gap-3">
+          <div>
+            <h3 className="font-display text-lg font-semibold">Needs review ({needsReview.length})</h3>
+            <p className="text-sm text-muted-foreground">
+              Geography, work arrangement, or employment type wasn&apos;t clear. Nothing here has been analyzed or added to your pipeline until you approve it.
+            </p>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            {needsReview.map((job) => (
+              <NeedsReviewCard key={job.id} job={job} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {(Object.keys(rejectedTotals).length > 0 || Object.keys(reviewTotals).length > 0) && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Last discovery run — what was filtered out</CardTitle>
+            <CardDescription>Summed across all watched boards (latest run of each).</CardDescription>
+          </CardHeader>
+          <div className="px-6 pb-6 text-sm">
+            <ul className="flex flex-col gap-1">
+              {Object.entries(rejectedTotals).sort((a, b) => b[1] - a[1]).map(([code, n]) => (
+                <li key={code}>
+                  <span className="font-medium">{n}</span> rejected — {REJECT_LABELS[code] ?? code}
+                </li>
+              ))}
+              {Object.entries(reviewTotals).sort((a, b) => b[1] - a[1]).map(([code, n]) => (
+                <li key={code}>
+                  <span className="font-medium">{n}</span> sent to review — {REVIEW_LABELS[code] ?? code}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </Card>
+      )}
 
       {duplicateQueue.length > 0 && (
         <div className="flex flex-col gap-3">

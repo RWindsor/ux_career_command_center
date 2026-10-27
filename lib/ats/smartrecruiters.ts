@@ -35,7 +35,8 @@ export const smartrecruitersAdapter: AtsAdapter = {
       content?: {
         id: string;
         name: string;
-        location?: { city?: string; region?: string; country?: string };
+        location?: { city?: string; region?: string; country?: string; remote?: boolean; hybrid?: boolean };
+        typeOfEmployment?: { label?: string };
         applyUrl?: string;
         ref?: string;
       }[];
@@ -54,13 +55,17 @@ export const smartrecruitersAdapter: AtsAdapter = {
           .join(", ");
 
         let description = "";
+        let publicUrl = posting.applyUrl ?? null;
         try {
           const detailUrl = `https://api.smartrecruiters.com/v1/companies/${encodeURIComponent(boardToken)}/postings/${encodeURIComponent(posting.id)}`;
           const detailRes = await fetch(detailUrl, { headers: { Accept: "application/json" } });
           if (detailRes.ok) {
             const detail = (await detailRes.json()) as {
+              postingUrl?: string;
+              applyUrl?: string;
               jobAd?: { sections?: Record<string, { title?: string; text?: string }> };
             };
+            publicUrl = detail.postingUrl ?? detail.applyUrl ?? publicUrl;
             const sections = detail.jobAd?.sections ?? {};
             description = Object.values(sections)
               .map((section) => `${section.title ?? ""}\n${section.text ? stripHtml(section.text) : ""}`)
@@ -79,7 +84,11 @@ export const smartrecruitersAdapter: AtsAdapter = {
           company: boardToken,
           location: location || null,
           description: description || `(Full description unavailable — view the original posting for details.)`,
-          url: posting.applyUrl ?? null,
+          url: publicUrl,
+          // Optional hints — not verified against a live company from this environment; absent => unknown.
+          employmentType: posting.typeOfEmployment?.label ?? null,
+          workplaceType: posting.location?.hybrid ? "hybrid" : posting.location?.remote ? "remote" : null,
+          countryCodes: posting.location?.country ? [posting.location.country] : undefined,
         };
         return listing;
       })

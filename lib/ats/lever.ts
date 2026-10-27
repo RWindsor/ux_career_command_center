@@ -23,7 +23,9 @@ export const leverAdapter: AtsAdapter = {
     const data = (await res.json()) as {
       id: string;
       text: string;
-      categories?: { location?: string; team?: string; commitment?: string };
+      categories?: { location?: string; team?: string; commitment?: string; allLocations?: string[] };
+      workplaceType?: string;
+      country?: string;
       descriptionPlain?: string;
       description?: string;
       lists?: { text: string; content: string }[];
@@ -54,6 +56,10 @@ export const leverAdapter: AtsAdapter = {
         location: posting.categories?.location ?? null,
         description,
         url: posting.hostedUrl ?? posting.applyUrl ?? null,
+        // Optional hints — fields not verified against a live board from this environment; absent => unknown.
+        employmentType: posting.categories?.commitment ?? null,
+        workplaceType: posting.workplaceType && posting.workplaceType !== "unspecified" ? posting.workplaceType : null,
+        countryCodes: posting.country ? [posting.country] : undefined,
       };
     });
   },

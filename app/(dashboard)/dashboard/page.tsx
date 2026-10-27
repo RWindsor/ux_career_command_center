@@ -2,6 +2,7 @@ import { eq } from "drizzle-orm";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { jobs, resumes } from "@/lib/db/schema";
+import { isHiddenDiscoveryJob } from "@/lib/discovery/visibility";
 import { getPipelineStats, getLatestWeeklyReport } from "@/app/actions/reports";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -15,7 +16,7 @@ export default async function DashboardPage() {
 
   const firstName = user?.email?.split("@")[0] ?? "there";
 
-  const userJobs = await db.select().from(jobs).where(eq(jobs.userId, userId));
+  const userJobs = (await db.select().from(jobs).where(eq(jobs.userId, userId))).filter((j) => !isHiddenDiscoveryJob(j));
   const userResumes = await db.select().from(resumes).where(eq(resumes.userId, userId));
   const stats = await getPipelineStats(userId);
   const latestReport = await getLatestWeeklyReport(userId);

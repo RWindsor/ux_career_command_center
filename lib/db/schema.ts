@@ -89,6 +89,19 @@ export const jobs = pgTable(
     /** Freeform compensation details the user enters once a job reaches the Offer stage. Never AI-generated. */
     offerCompensation: text("offer_compensation"),
 
+    // --- Discovery eligibility provenance (additive; all null for manual / pre-patch rows) ---
+    /** null = manual or imported before eligibility gating; "accepted" = passed a saved search; "needs_review" = ambiguous, awaiting the user. */
+    discoveryState: text("discovery_state"),
+    /** The saved search this job qualified under (or was routed to review by). No FK on purpose: deleting a search must never touch jobs. */
+    discoverySearchId: uuid("discovery_search_id"),
+    /** Short human-readable "why this matched / why it needs review", snapshotted at import time. */
+    discoveryReason: text("discovery_reason"),
+    /** The watched source that produced this job (null for older rows). */
+    watchedSourceId: uuid("watched_source_id"),
+    /** Set only when the system (not the user) archived this job; cleared if the user restores it. */
+    autoArchivedAt: timestamp("auto_archived_at", { withTimezone: true }),
+    autoArchiveReason: text("auto_archive_reason"),
+
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
@@ -380,9 +393,26 @@ export const atsWatchedSources = pgTable("ats_watched_sources", {
   /** Set when this board was found automatically by a saved search's resolver run, rather than added by hand. */
   discoveredViaSearchId: uuid("discovered_via_search_id"),
   autoDiscovered: boolean("auto_discovered").notNull().default(false),
+  /** Source-level exclusion (e.g. an aggregator board). Excluded sources are skipped entirely unless exclusionOverride is true. */
+  excluded: boolean("excluded").notNull().default(false),
+  exclusionReason: text("exclusion_reason"),
+  /** Explicit "import from this source anyway" switch. */
+  exclusionOverride: boolean("exclusion_override").notNull().default(false),
+  /** Last run's counts: { fetched, accepted, needsReview, alreadyImported, rejected: {code: n}, review: {code: n} }. */
+  lastRunStats: jsonb("last_run_stats").$type<DiscoveryRunStats>(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
+
+export interface DiscoveryRunStats {
+  fetched: number;
+  accepted: number;
+  needsReview: number;
+  alreadyImported: number;
+  rejected: Record<string, number>;
+  review: Record<string, number>;
+  note?: string;
+}
 
 export type AtsWatchedSource = typeof atsWatchedSources.$inferSelect;
 export type NewAtsWatchedSource = typeof atsWatchedSources.$inferInsert;
@@ -416,6 +446,14 @@ export const savedSearches = pgTable("saved_searches", {
   locationQuery: text("location_query"),
   /** Freeform employment type to match against listing text, e.g. "Full-time", "Contract". Null = no filter. */
   employmentType: text("employment_type"),
+  /** Country a posting must be open to (e.g. "US"). Null = no geography requirement. Independent of work arrangement. */
+  eligibleCountry: text("eligible_country"),
+  /** Optional US-state eligibility; only "CA" is supported. Null = no state rule. */
+  eligibleState: text("eligible_state"),
+  /** "remote" | "hybrid" | "onsite". Null = any arrangement. */
+  workArrangement: text("work_arrangement"),
+  /** Title terms that disqualify a posting (whole-word, case-insensitive), e.g. ["intern", "director"]. */
+  excludedTitleTerms: jsonb("excluded_title_terms").$type<string[]>().notNull().default([]),
   /** Which ATS ecosystems to resolve boards from for this search. */
   providers: jsonb("providers").$type<AtsProviderValue[]>().notNull(),
   enabled: boolean("enabled").notNull().default(true),

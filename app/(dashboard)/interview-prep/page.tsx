@@ -2,6 +2,7 @@ import Link from "next/link";
 import { desc, eq, inArray } from "drizzle-orm";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
+import { isHiddenDiscoveryJob } from "@/lib/discovery/visibility";
 import { jobs, interviewPreps } from "@/lib/db/schema";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -11,7 +12,7 @@ export default async function InterviewPrepHubPage() {
   const session = await auth();
   const userId = session!.user!.id;
 
-  const userJobs = await db.select().from(jobs).where(eq(jobs.userId, userId)).orderBy(desc(jobs.createdAt));
+  const userJobs = (await db.select().from(jobs).where(eq(jobs.userId, userId)).orderBy(desc(jobs.createdAt))).filter((j) => !isHiddenDiscoveryJob(j));
 
   const jobIds = userJobs.map((j) => j.id);
   const preps = jobIds.length > 0 ? await db.select().from(interviewPreps).where(inArray(interviewPreps.jobId, jobIds)) : [];

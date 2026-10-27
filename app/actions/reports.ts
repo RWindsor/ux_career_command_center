@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { and, desc, eq, gte } from "drizzle-orm";
 import { db } from "@/lib/db";
+import { isHiddenDiscoveryJob } from "@/lib/discovery/visibility";
 import {
   jobs,
   jobMatches,
@@ -31,7 +32,7 @@ function startOfWeek(date: Date): Date {
 export async function getPipelineStats(userId: string) {
   const weekStart = startOfWeek(new Date());
 
-  const userJobs = await db.select().from(jobs).where(eq(jobs.userId, userId));
+  const userJobs = (await db.select().from(jobs).where(eq(jobs.userId, userId))).filter((j) => !isHiddenDiscoveryJob(j));
   const submitted = userJobs.filter((j) => j.status !== "saved");
   const applicationsSubmittedThisWeek = submitted.filter((j) => j.createdAt >= weekStart).length;
   const jobsAddedThisWeek = userJobs.filter((j) => j.createdAt >= weekStart).length;

@@ -30,7 +30,7 @@ export function DuplicateReviewCard({
         {existing ? (
           <>
             Looks like a repeat of{" "}
-            <Link href={`/dashboard/jobs/${existing.id}`} className="text-primary underline-offset-4 hover:underline">
+            <Link href={`/jobs/${existing.id}`} className="text-primary underline-offset-4 hover:underline">
               {existing.title} at {existing.company}
             </Link>{" "}
             (status: {existing.status}, added {new Date(existing.createdAt).toLocaleDateString()}).
