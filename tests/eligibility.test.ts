@@ -362,3 +362,8 @@ test("ATS US country cannot override a narrower Canada-only restriction", () => 
   assert.equal(d.decision, "review");
   assert.ok(d.decision === "review" && d.codes.includes("geography_conflict"));
 });
+
+test("Ashby-style country names normalize alongside ISO country codes", () => {
+  assert.equal(evaluateListing(listing({ countryCodes: ["United States"], workplaceType: "Remote", employmentType: "FullTime" }), [usRemote]).decision, "accept");
+  assert.equal(evaluateListing(listing({ countryCodes: ["Canada"], workplaceType: "Remote", employmentType: "FullTime" }), [usRemote]).decision, "reject");
+});

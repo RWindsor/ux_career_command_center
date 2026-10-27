@@ -229,7 +229,7 @@ export function checkGeography(listing: NormalizedListing, countryInput: string)
   }
 
   // 1) Structured country codes from the ATS beat any text parsing.
-  const codes = (listing.countryCodes ?? []).map((c) => c.trim().toUpperCase()).filter(Boolean);
+  const codes = (listing.countryCodes ?? []).map((c) => resolveCountry(c)?.code ?? c.trim().toUpperCase()).filter(Boolean);
   if (codes.length > 0) {
     const narrower = descriptionGeography(listing.description, target);
     if (codes.includes(target.code) && narrower.negative && !narrower.positive) {

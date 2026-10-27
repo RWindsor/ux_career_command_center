@@ -9,7 +9,7 @@ Inspected October 27, 2026. No repository AGENTS.md or CLAUDE.md found.
 - Reconstructed revision 2 eligibility gate, saved-search controls, review queue, source exclusions, and default-paused discovery cron.
 - Preserve current navigation/routes and Brave provider; no wholesale repository replacement.
 - Correct new links/revalidation paths to /jobs and /discovery.
-- Contradictory ATS metadata and description (remote/not-remote or US/Canada-only) now route to Needs review. Two added regression tests reproduce the previous incorrect acceptance.
+- Contradictory ATS metadata and description (remote/not-remote or US/Canada-only) now route to Needs review. Two added regression tests reproduce the previous incorrect acceptance. Live ATS checks also exposed country-name normalization (Ashby returns United States) and missing SmartRecruiters detail-page URLs; both are fixed with regression coverage.
 - Manual Run now capped at 10 newly inserted jobs per source; scheduled runs unchanged apart from eligibility and pause gates.
 - Clarify empty-country selection and remove Contract from suggested title exclusions.
 - Test command uses node --import tsx to avoid unnecessary IPC socket creation.
@@ -18,12 +18,12 @@ Inspected October 27, 2026. No repository AGENTS.md or CLAUDE.md found.
 ## Verification
 
 - npm ci --ignore-scripts: passed with lockfile.
-- npm test: 32 passed, 0 failed, 8 skipped (40 total).
+- npm test: 34 passed locally, 0 failed, 8 skipped (42 total); prior commit passed all 40 tests against disposable PostgreSQL 16 in GitHub Actions; updated CI will verify the final 42.
 - npx tsc --noEmit: passed.
 - npm run build: passes with a dummy DATABASE_URL and AUTH_SECRET solely to initialize imports; no real DB connection. Authentication dependencies emit Edge compatibility warnings.
 - Eight Postgres tests are unverified here: they require a disposable test DB and drop/recreate its public schema. Never use production or a production-data clone for that test harness.
 - Live browser: current Discovery page accessible in user's signed-in Chrome. Current screens inspected; new screens await deployed/migrated preview verification.
-- Neon, live ATS adapter fields, authenticated paused cron response and import flow remain to verify.
+- Live Lever, Ashby and SmartRecruiters API responses were inspected read-only; normalized real-board evaluation can run without DB writes. Neon, authenticated paused cron response and persisted import/review flow remain to verify.
 
 ## Observed live configuration
 
@@ -33,7 +33,7 @@ DISCOVERY_CRON_ENABLED is absent in Vercel. IMPORTANT: current old code does not
 
 ## Production changes requiring approval
 
-1. During migration/deployment window, pause discovery schedules through project cron controls if available; otherwise pause all current saved searches and watched boards through existing app controls (record original states). Do not pause the whole website or weekly report.
+1. Deploy prerequisite PR #2 (fix/discovery-rollout-pause, f88bb1848f585466c9f2cdf531f321ede04ae510) first: just the rollout helper and two cron guards, with no schema dependencies. The currently absent switch pauses scheduled discovery. Verify before migration. The whole website, manual actions and weekly report remain available.
 2. Apply only explicit SQL migrations 0002 then 0003 in a short transaction with lock timeout, after checking schema. 0002 adds 13 columns and clears dangling saved-search references on source rows; 0003 adds eligible_state. No job values, notes, applications or prep records are updated. Do not run broad db:push against production.
 3. Ensure DISCOVERY_CRON_ENABLED=false for production and preview. Deploy reviewed branch to preview, verify migrated schema/UI, then merge/deploy to production. Preview currently shares the same DATABASE_URL target metadata as production; do not run automatic test setup or test-data writes there.
 4. Leave all old searches paused while creating replacement searches. Creating a search resolves boards and can immediately import, so keep one enabled country-less legacy search as a temporary import interlock while configuring, then disable that interlock only when all replacements are ready. Alternatively configure search rows via reviewed scoped SQL with imports paused.
